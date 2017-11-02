@@ -21,7 +21,7 @@
 #' censorEDR = as.matrix(c(0, 1, 0, 1, 1, 1, rep(0, P-6)))
 #' T = exp(-2.5 + dataX %*% failEDR[,1] +
 #'     0.5*(dataX %*% failEDR[,1])*(dataX %*% failEDR[,2]) + 0.25*log(-log(1-runif(N))))
-#' C = exp( -0.5 + dataX %*% censorEDR  + log(-log(1-runif(N))))
+#' C = exp( -0.5 + dataX %*% censorEDR  + log(-log(1-runif(N))) )
 #' Y = pmin(T, C)
 #' Censor = (T < C)
 #'

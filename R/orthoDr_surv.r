@@ -117,6 +117,7 @@ orthoDr_surv <- function(x, y, censor, ndr = 2, B.initial = NULL, bw = NULL,
 
   Yorder = order(y)
   X = scale(x, scale = FALSE)
+  X = X / sd(as.vector(X))
   X = X[Yorder, ]
   Y = seq(0, 1, length.out = length(y))
   C = censor[Yorder]
@@ -146,7 +147,7 @@ orthoDr_surv <- function(x, y, censor, ndr = 2, B.initial = NULL, bw = NULL,
   # start to fit the model
 
   pre = Sys.time()
-  fit = surv_solver(B.initial, X, Phit, inRisk, bw, Fail.Ind,
+  fit = surv_solver(B.initial, X, Phit, inRisk, Fail.Ind, bw,
                     control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                     control$btol, control$ftol, control$gtol, maxitr, verbose)
   if (verbose > 0)

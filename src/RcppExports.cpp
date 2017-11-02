@@ -32,17 +32,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // surv_solver
-List surv_solver(arma::mat B, arma::mat X, arma::mat Phit, NumericMatrix inRisk, double bw, NumericVector Fail_Ind, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose);
-RcppExport SEXP _orthoDr_surv_solver(SEXP BSEXP, SEXP XSEXP, SEXP PhitSEXP, SEXP inRiskSEXP, SEXP bwSEXP, SEXP Fail_IndSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP) {
+List surv_solver(arma::mat B, const arma::mat& X, const arma::mat& Phit, const arma::mat& inRisk, const arma::vec& Fail_Ind, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose);
+RcppExport SEXP _orthoDr_surv_solver(SEXP BSEXP, SEXP XSEXP, SEXP PhitSEXP, SEXP inRiskSEXP, SEXP Fail_IndSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type B(BSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Phit(PhitSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type inRisk(inRiskSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Phit(PhitSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type inRisk(inRiskSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type Fail_Ind(Fail_IndSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type Fail_Ind(Fail_IndSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
@@ -53,7 +53,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type gtol(gtolSEXP);
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(surv_solver(B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose));
+    rcpp_result_gen = Rcpp::wrap(surv_solver(B, X, Phit, inRisk, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

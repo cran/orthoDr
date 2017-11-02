@@ -59,7 +59,7 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
 #' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 #' # to solve for the parameters B.
 #'
-surv_solver <- function(B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose) {
-    .Call('_orthoDr_surv_solver', PACKAGE = 'orthoDr', B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+surv_solver <- function(B, X, Phit, inRisk, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose) {
+    .Call('_orthoDr_surv_solver', PACKAGE = 'orthoDr', B, X, Phit, inRisk, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 }
 

@@ -4,7 +4,7 @@
 \alias{surv_solver}
 \title{surv_solver}
 \usage{
-surv_solver(B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon,
+surv_solver(B, X, Phit, inRisk, Fail_Ind, bw, rho, eta, gamma, tau, epsilon,
   btol, ftol, gtol, maxitr, verbose)
 }
 \arguments{
@@ -16,9 +16,9 @@ surv_solver(B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon,
 
 \item{inRisk}{A matrix of indicators shows whether each subject is still alive at each time point}
 
-\item{bw}{A Kernel bandwidth, assuming each variable have unit variance}
-
 \item{Fail_Ind}{The locations of the failure subjects}
+
+\item{bw}{A Kernel bandwidth, assuming each variable have unit variance}
 
 \item{rho}{(don't change) Parameter for control the linear approximation in line search}
 
