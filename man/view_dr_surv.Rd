@@ -4,8 +4,9 @@
 \alias{view_dr_surv}
 \title{2D or 2D view of survival data on reduced dimension}
 \usage{
-view_dr_surv(x, y, censor, B = NULL, bw = NULL, scale = c("log"),
-  type = "2D")
+view_dr_surv(x, y, censor, B = NULL, bw = NULL, FUN = "log",
+  type = "2D", legend.add = TRUE, xlab = "Reduced Direction",
+  ylab = "Time", zlab = "Survival")
 }
 \arguments{
 \item{x}{A matrix or data.frame for features (continuous only). The algorithm will not scale the columns to unit variance}
@@ -18,30 +19,31 @@ view_dr_surv(x, y, censor, B = NULL, bw = NULL, scale = c("log"),
 
 \item{bw}{A Kernel bandwidth (3D plot only) for approximating the survival function, default is the Silverman's formula}
 
-\item{scale}{Using a transformed scale of the time \code{y}. Can be \code{none}, \code{log}, \code{loglog} or \code{root}. Default is \code{log}.}
+\item{FUN}{A scaling function applied to the time points \code{y}. Default is \code{"log"}.}
 
 \item{type}{\code{2D} or \code{3D} plot}
+
+\item{legend.add}{Should legend be added (2D plot only)}
+
+\item{xlab}{x axis label}
+
+\item{ylab}{y axis label}
+
+\item{zlab}{z axis label}
 }
 \description{
 Produce 2D or 3D plots of right censored survival data based on a given dimension reduction space
 }
 \examples{
 # generate some survival data
-set.seed(1)
-N = 350
-P = 6
-dataX = matrix(rnorm(N*P), N, P)
-failEDR = as.matrix(cbind(c(1, 1, 0, 0, 0, 0, rep(0, P-6)),
-                          c(0, 0, 1, -1, 0, 0, rep(0, P-6))))
-censorEDR = as.matrix(c(0, 1, 0, 1, 1, 1, rep(0, P-6)))
-T = exp(-2.5 + dataX \%*\% failEDR[,1] +
-    0.5*(dataX \%*\% failEDR[,1])*(dataX \%*\% failEDR[,2]) + 0.25*log(-log(1-runif(N))))
-C = exp( -0.5 + dataX \%*\% censorEDR  + log(-log(1-runif(N))))
-Y = pmin(T, C)
-Censor = (T < C)
-view_dr_surv(dataX, Y, Censor, B = failEDR[,1], scale = "log", type = "2D")
+N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)
+Y = exp(-1 + dataX[,1] + rnorm(N))
+Censor = rbinom(N, 1, 0.8)
+
+orthoDr.fit = orthoDr_surv(dataX, Y, Censor, ndr = 1, method = "dm")
+view_dr_surv(dataX, Y, Censor, orthoDr.fit$B)
 }
 \references{
-Sun, Q., Zhu, R., Wang T. and Zeng D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-\url{https://arxiv.org/abs/1704.05046} .
+Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
+\url{https://arxiv.org/abs/1704.05046}.
 }

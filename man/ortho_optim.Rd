@@ -18,7 +18,7 @@ ortho_optim(B, fn, grad = NULL, ..., maximize = FALSE, control = list(),
 
 \item{maximize}{By default, the solver will try to minimize the objective function unless \code{maximize = TRUE}}
 
-\item{control}{A list of tuning varaibles for optimization. \code{epsilon} is the size for numerically appriximating the gradient. For others, see Wen and Yin (2013).}
+\item{control}{A list of tuning variables for optimization. \code{epsilon} is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).}
 
 \item{maxitr}{Maximum number of iterations}
 
@@ -27,34 +27,29 @@ ortho_optim(B, fn, grad = NULL, ..., maximize = FALSE, control = list(),
 \value{
 A \code{orthoDr} object; a list consisting of
 \item{B}{The optimal \code{B} value}
-\item{fn}{The final funtional value}
+\item{fn}{The final functional value}
 \item{itr}{The number of iterations}
 \item{converge}{convergence code}
 }
 \description{
-A general purpose optimization solver with orthogonality constraint. The orthogonality constrained optimization method is a nearly direct translation from Wen and Yin (2010)'s matlab code.
+A general purpose optimization solver with orthogonality constraint. The orthogonality constrained optimization method is a nearly direct translation from Wen and Yin (2010)'s Matlab code.
 }
 \examples{
+# an eigen value problem
 library(pracma)
-# an example of searching for the first principal component
 set.seed(1)
-P = 100
-N = 400
-X = scale(matrix(rnorm(N*P), N, P), scale = FALSE)
-w = gramSchmidt(matrix(rnorm(P), P, 1))$Q
-fx <- function(w, X) t(w) \%*\% t(X) \%*\% X \%*\% w
+n = 100; k = 6
+A = matrix(rnorm(n*n), n, n)
+A = t(A) \%*\% A
+B = gramSchmidt(matrix(rnorm(n*k), n, k))$Q
+fx <- function(B, A) -0.5 * sum(diag(t(B) \%*\% A \%*\% B ))
+gx <- function(B, A) -A \%*\% B
+fit = ortho_optim(B, fx, gx, A = A)
+fx(fit$B, A)
 
-# fit the
-fit = ortho_optim(w, fx, X = X, maximize = TRUE, verbose = 0)
-
-# compare the result with prcomp
-distance(fit$B, as.matrix(prcomp(X)$rotation[, 1]), type = "dist")
-
-# if we have the derivative
-
-gx <- function(w, X) 2*t(X) \%*\% X \%*\% w
-fit = ortho_optim(w, fx, gx, X = X, maximize = TRUE, verbose = 0)
-distance(fit$B, as.matrix(prcomp(X)$rotation[, 1]), type = "dist")
+# compare with the solution from the eigen function
+sol = eigen(A)$vectors[, 1:k]
+fx(sol, A)
 }
 \references{
 Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.

@@ -12,7 +12,7 @@ silverman(d, n)
 \item{n}{Number of observation}
 }
 \value{
-A simple bandwith choice
+A simple bandwidth choice
 }
 \description{
 Silverman bandwidth

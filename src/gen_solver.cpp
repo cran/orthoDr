@@ -20,7 +20,7 @@ void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Environment env)
 
   for (int k=0; k<ndr; k++)
     for (int j=0; j<P; j++)
-      G(j, k) = REAL(x)[j + k*ndr];
+      G(j, k) = REAL(x)[j + k*P];
 
   return;
 }
@@ -179,6 +179,7 @@ List gen_solver(arma::mat B,
     int nls = 1;
     double deriv = rho * nrmG * nrmG;
 
+    // line search
     while(true){
       if(invH){
         diag_n.eye();
@@ -208,14 +209,14 @@ List gen_solver(arma::mat B,
       GXT = G * B.t();
       H = 0.5 * (GXT - GXT.t());
       RX = H * B;
-    }else{
+    }else{ // algorithm 1
       U = join_rows(G, B);
       V = join_rows(B, -G);
       VU = V.t() * U;
       VX = V.t() * B;
     }
 
-    dtX = G - B * GX; // GX, dtX, nrmG slightly different from those of R code
+    dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
 
     S = B - BP;
@@ -231,7 +232,7 @@ List gen_solver(arma::mat B,
       tau = SY/accu(Y % Y);
     }
 
-    tau = dmax(dmin(tau, 1e10), 1e-20);
+    tau = dmax(dmin(tau, 1e20), 1e-20);
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;

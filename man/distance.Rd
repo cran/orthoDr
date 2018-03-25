@@ -13,7 +13,7 @@ distance(s1, s2, type = "dist", x = NULL)
 
 \item{type}{type of distance measures: "dist" (default), "trace" or "canonical"}
 
-\item{x}{the covairate values, for canonical correlation only}
+\item{x}{the covariate values, for canonical correlation only}
 }
 \value{
 The distance between \code{s1} and \code{s2}.

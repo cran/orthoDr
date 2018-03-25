@@ -1,162 +1,174 @@
 #include <RcppArmadillo.h>
+#include "utilities.h"
 
 using namespace Rcpp;
 
 //[[Rcpp::depends(RcppArmadillo)]]
 
-double surv_f(const arma::mat& B,
+double phd_f(const arma::mat& B,
               const arma::mat& X,
-              const arma::mat& Phit,
-              const arma::mat& inRisk,
-              const arma::vec& Fail_Ind,
-              const double bw)
+              const arma::mat& Y,
+              const arma::cube& XX,
+              double bw,
+              int ncore)
 {
-  // This function computes the estimation equations and its 2-norm for the survival dimensional reduction model
-  // It only implement the dN method, with phi(t)
+  // This function computes the estimation equations and its 2-norm for the semi-parametric dimensional reduction model
+  // OptCpp1(B, G, X, Phit_cpp, inRisk, kernel.bw.scale, Fail.Ind)
 
   int N = X.n_rows;
   int P = X.n_cols;
-  int nFail = inRisk.n_cols;
+  int ndr = B.n_cols;
 
   arma::mat BX = X * B;
-  arma::mat kernel_matrix(N, N);
 
-  for (int i = 0; i < N; i++)
-  {
-    kernel_matrix(i, i) = 1;
-    for (int j = i + 1; j < N; j ++)
-    {
-      kernel_matrix(j,i) = exp(-sum(pow(BX.row(i)-BX.row(j),2))/bw/bw);
-      kernel_matrix(i,j) = kernel_matrix(j,i);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+
+  for (int j=0; j<ndr; j++)
+    BX.col(j) /= BX_scale(j);
+
+ // Rcout << stddev(BX, 0, 0) << std::endl;
+
+  //Rcout << "Start" << std::endl;
+
+  arma::mat kernel_matrix_x(N, N);
+
+  if (ncore > 1)
+    kernel_matrix_x = KernelDist_multi(BX, ncore, 1);
+  else
+    kernel_matrix_x = KernelDist_single(BX, 1);
+
+  arma::rowvec Kx = sum(kernel_matrix_x, 0);
+
+  // XX - E[XX | BX]
+
+  arma::cube XX_BX(P, P, N, arma::fill::zeros);
+
+#pragma omp parallel for schedule(static) num_threads(ncore)
+  for(int i=0; i<N; i++){
+
+    double EY_BX = 0;
+
+    for(int j=0; j<N; j++){
+      XX_BX.slice(i) += X.row(j).t() * X.row(j) * kernel_matrix_x(i,j);
+      EY_BX += Y(j) * kernel_matrix_x(i,j);
     }
+
+    XX_BX.slice(i) = (XX.slice(i) - XX_BX.slice(i)/Kx(i)) * ( Y(i) - EY_BX/Kx(i));
   }
 
-  arma::mat TheCenter(nFail, P);
-  arma::mat TheCond(1,P);
+  //Rcout << Ex << std::endl;
 
-  double unweighted_sum;
-  double weights;
+  arma::mat Est(P, P, arma::fill::zeros);
 
-  for(int j=0; j<nFail; j++)
-  {
-    for(int i=0; i<P; i++)
-    {
-      unweighted_sum = 0;
-      weights = 0;
-
-      for(int k=0; k<N; k++)
-      {
-        if(inRisk(k,j)==true)
-        {
-          unweighted_sum = unweighted_sum + X(k,i) * kernel_matrix(k,Fail_Ind[j]-1);
-          weights = weights + kernel_matrix(k,Fail_Ind[j]-1);
-        }
-      }
-      TheCond(0,i) = unweighted_sum/weights;
-    }
-    TheCenter.row(j) = X.row(Fail_Ind[j]-1) - TheCond;
+  for (int i=0; i < N; i++){
+    Est += XX_BX.slice(i);
   }
+  //stop("Top here ...");
+  return accu(pow(Est, 2))/N/N;
 
-  arma::mat matrixsum(P, P);
-  matrixsum.fill(0);
-
-  for(int i=0; i<nFail; i++)
-  {
-    matrixsum = matrixsum + Phit.col(i) * TheCenter.row(i);
-  }
-
-  return accu(pow(matrixsum,2))/N/N;
 }
 
-void surv_g(arma::mat& B,
+void phd_g(arma::mat& B,
+            const double F0,
             arma::mat& G,
             const arma::mat& X,
-            const arma::mat& Phit,
-            const arma::mat& inRisk,
-            const arma::vec& Fail_Ind,
-            const double bw,
-            const double epsilon)
-{
-  // This function computes the gradiant of the estimation equations
-
-  double F0 = surv_f(B, X, Phit, inRisk, Fail_Ind, bw);
+            const arma::mat& Y,
+            const arma::cube& XX,
+            double bw,
+            double epsilon,
+            int ncore)
+  {
   int P = B.n_rows;
   int ndr = B.n_cols;
-  double temp;
 
+#pragma omp parallel num_threads(ncore)
+{
+  // create one copy of B for each thread
+  arma::mat NewB(P, ndr);
+  NewB = B;
+
+  #pragma omp for collapse(2) schedule(static)
   for (int j = 0; j < ndr; j++)
-  {
-    for(int i = 0; i < P; i++)
-    {
-      // small increment
-      temp = B(i,j);
-      B(i,j) += epsilon;
+    for (int i = 0; i < P; i++)
+    {  // small increment
+
+      double temp = B(i, j);
+      NewB(i, j) = B(i, j) + epsilon;
 
       // calculate gradiant
-      G(i,j) = (surv_f(B, X, Phit, inRisk, Fail_Ind, bw) - F0) / epsilon;
+      G(i,j) = (phd_f(NewB, X, Y, XX, bw, 1) - F0) / epsilon;
 
       // reset
-      B(i,j) = temp;
+      NewB(i, j) = temp;
     }
-  }
-
+}
   return;
 }
 
+// initial value
 
-double dmax(double a, double b)
+//' @title phd_init
+//' @name phd_init
+//' @description phd initial value function
+//' @keywords internal
+// [[Rcpp::export]]
+
+double phd_init(const arma::mat& B,
+                 const arma::mat& X,
+                 const arma::mat& Y,
+                 double bw,
+                 int ncore)
 {
-  if (a > b)
-    return a;
+  int N = X.n_rows;
+  int P = B.n_rows;
 
-  return b;
+  checkCores(ncore, 0.0);
+
+  //precalculate
+
+  arma::cube XX(P, P, N, arma::fill::zeros);
+
+#pragma omp parallel for schedule(static) num_threads(ncore)
+  for(int i=0; i<N; i++){
+    XX.slice(i) = X.row(i).t() * X.row(i);
+  }
+
+  // Initial function value
+
+  double F = phd_f(B, X, Y, XX, bw, ncore);
+
+  return F;
 }
 
-double dmin(double a, double b)
-{
-  if (a > b)
-    return b;
 
-  return a;
-}
-
-
-//' @title surv_solver
-//' @name surv_solver
-//' @description The main optimization function for survival dimensional reduction, the IR-CP method. This is an internal function and should not be called directly.
+//' @title semi-phd solver \code{C++} function
+//' @name phd_solver
+//' @description Sovling the semi-phd estimating equations. This is an internal function and should not be called directly.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-//' @param X The covariate matrix
-//' @param Phit Phit as defined in Sun et al. (2017)
-//' @param inRisk A matrix of indicators shows whether each subject is still alive at each time point
-//' @param bw A Kernel bandwidth, assuming each variable have unit variance
-//' @param Fail_Ind The locations of the failure subjects
+//' @param X A matrix of the parameters \code{X}
+//' @param Y A matrix of the parameters \code{Y}
+//' @param bw Kernel bandwidth for X
 //' @param rho (don't change) Parameter for control the linear approximation in line search
 //' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
 //' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
 //' @param tau (don't change) Step size for updating
-//' @param epsilon (don't change) Parameter for approximating numerical gradient
+//' @param epsilon (don't change) Parameter for apprximating numerical gradient, if \code{g} is not given.
 //' @param btol (don't change) The \code{$B$} parameter tolerance level
-//' @param ftol (don't change) Estimation equation 2-norm tolerance level
+//' @param ftol (don't change) Functional value tolerance level
 //' @param gtol (don't change) Gradient tolerance level
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
-//' @return The optimizer \code{B} for the esitmating equation.
-//' @references Sun, Q., Zhu, R., Wang T. and Zeng D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
-//' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
-//' @examples
-//' # This function should be called internally. When having all objects pre-computed, one can call
-//' # surv_solver(B, X, Phit, inRisk, bw, Fail.Ind,
-//' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
-//' # to solve for the parameters B.
+//' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
+//' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
+//' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+//' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 //'
 // [[Rcpp::export]]
 
-List surv_solver(arma::mat B,
-                 const arma::mat& X,
-                 const arma::mat& Phit,
-                 const arma::mat& inRisk,
-                 const arma::vec& Fail_Ind,
+List phd_solver(arma::mat B,
+                 arma::mat& X,
+                 arma::mat& Y,
                  double bw,
                  double rho,
                  double eta,
@@ -167,9 +179,10 @@ List surv_solver(arma::mat B,
                  double ftol,
                  double gtol,
                  int maxitr,
-                 int verbose)
+                 int verbose,
+                 int ncore)
 {
-
+  int N = X.n_rows;
   int P = B.n_rows;
   int ndr = B.n_cols;
 
@@ -182,13 +195,26 @@ List surv_solver(arma::mat B,
     eye2P.eye();
   }
 
+  // initialize parallel computing
+
+  checkCores(ncore, verbose);
+
+  //precalculate
+
+  arma::cube XX(P, P, N, arma::fill::zeros);
+
+#pragma omp parallel for schedule(static) num_threads(ncore)
+  for(int i=0; i<N; i++){
+    XX.slice(i) = X.row(i).t() * X.row(i);
+  }
+
   // Initial function value and gradient, prepare for iterations
 
-  double F = surv_f(B, X, Phit, inRisk, Fail_Ind, bw);
+  double F = phd_f(B, X, Y, XX, bw, ncore);
 
   arma::mat G(P, ndr);
   G.fill(0);
-  surv_g(B, G, X, Phit, inRisk, Fail_Ind, bw, epsilon);
+  phd_g(B, F, G, X, Y, XX, bw, epsilon, ncore);
 
   //return G;
 
@@ -229,7 +255,7 @@ List surv_solver(arma::mat B,
   arma::mat S;
   double BDiff;
   double FDiff;
-  arma::mat Y;
+  arma::mat Y_Y;
   double SY;
 
   if (verbose > 1)
@@ -253,8 +279,8 @@ List surv_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
-      F = surv_f(B, X, Phit, inRisk, Fail_Ind, bw);
-      surv_g(B, G, X, Phit, inRisk, Fail_Ind, bw, epsilon);
+      F = phd_f(B, X, Y, XX, bw, ncore);
+      phd_g(B, F, G, X, Y, XX, bw, epsilon, ncore);
 
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
@@ -284,13 +310,13 @@ List surv_solver(arma::mat B,
     BDiff = norm(S, "fro")/sqrt((double) P);
     FDiff = std::abs(FP - F)/(std::abs(FP)+1);
 
-    Y = dtX - dtXP;
-    SY = std::abs(accu(S % Y));
+    Y_Y = dtX - dtXP;
+    SY = std::abs(accu(S % Y_Y));
 
     if(itr%2 == 0){
       tau = accu(S % S)/SY;
     }else{
-      tau = SY/accu(Y % Y);
+      tau = SY/accu(Y_Y % Y_Y);
     }
 
     tau = dmax(dmin(tau, 1e10), 1e-20);
@@ -322,8 +348,8 @@ List surv_solver(arma::mat B,
 
   }
 
-	if(itr>=maxitr){
-		Rcout << "exceed max iteration before convergence ... " << std::endl;
+  if(itr>=maxitr){
+    Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
   arma::mat diag_P(ndr,ndr);
