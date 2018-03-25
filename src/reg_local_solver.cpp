@@ -22,7 +22,7 @@ double local_f(const arma::mat& B,
 
   arma::mat BX = X * B;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
 
@@ -62,13 +62,14 @@ double local_f(const arma::mat& B,
     for (int k=1; k<ndr+1; k++)
       X_w.col(k) = X_w.col(k) % kernel_matrix_x.col(i);
 
-    arma::mat beta_hat = (X_w.t()*X_w).i()*(X_w.t()*( Y % kernel_matrix_x.col(i)) );
+    //arma::mat beta_hat = (X_w.t()*X_w).i()*(X_w.t()*( Y % kernel_matrix_x.col(i)) );
+
+     arma::mat beta_hat = arma::solve(X_w, Y % kernel_matrix_x.col(i), arma::solve_opts::fast);
 
     a(i) = beta_hat(0,0);
 
     for(int k=0; k<ndr; k++)
       b(i,k) = beta_hat(k+1, 0);
-
   }
 
   double ret = 0;

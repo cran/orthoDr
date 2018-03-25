@@ -22,7 +22,7 @@ double save_f(const arma::mat& B,
 
   arma::mat BX = X * B;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
@@ -101,7 +101,7 @@ double save_f(const arma::mat& B,
   }
 */
 
-  return accu(pow(Est, 2))/N/N;
+  return accu(pow(Est/N, 2));
 
 }
 
@@ -222,9 +222,9 @@ double save_init(const arma::mat& B,
 //' @param gtol (don't change) Gradient tolerance level
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
-//' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
+//' @references Ma, Y. & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
 //' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
-//' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+//' @references Wen, Z. & Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 //' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 //'
 // [[Rcpp::export]]

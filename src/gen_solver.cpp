@@ -42,7 +42,7 @@ void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g
       temp = B(i,j);
       B(i,j) += epsilon;
 
-      // calculate gradiant
+      // calculate gradient
       G(i,j) = (gen_f(B, f, env) - F0) / epsilon;
 
       // reset

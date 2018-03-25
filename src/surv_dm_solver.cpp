@@ -41,7 +41,7 @@ double surv_dm_f(const arma::mat& B,
 
   arma::mat BX = X * B;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);

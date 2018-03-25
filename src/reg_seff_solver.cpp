@@ -18,7 +18,7 @@ double seff_f(const arma::mat& B,
 
   arma::mat BX = X * B;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
 
@@ -73,7 +73,7 @@ double seff_f(const arma::mat& B,
   for(int i=0; i<N; i++){
     Seff_sum += (X.row(i)-Ex.row(i)).t()*b.row(i)/a(i);
   }
-  ret = accu(pow(Seff_sum, 2)/N/N);
+  ret = accu(pow(Seff_sum/N, 2));
 
   return ret;
 }

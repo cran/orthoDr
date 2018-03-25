@@ -65,7 +65,7 @@ orthoDr_reg <- function(x, y, method = "sir", ndr = 2,
     bw = silverman(ndr, N)
 
   # scale y
-  Y = as.matrix(scale(y) / silverman(1, N) / sqrt(2))
+  Y = as.matrix(scale(y) / N^(-1/(ndr+5)) / sqrt(2))
 
   # scale x
   X = x
