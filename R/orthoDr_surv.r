@@ -82,6 +82,8 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
     bw = silverman(ndr, N)
 
   # scale X and Y for stability
+  # Y = scale(log(y)) / sqrt(2) / silverman(1, N)
+
   Y = scale(rank(y, ties.method = "average") / (N + 1)) / sqrt(2) / silverman(1, N)
 
   xscale = apply(x, 2, sd)
@@ -157,7 +159,7 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
     fit[['censor']] = censor
   }
 
-  class(fit) <- c("orthoDr", "fit", "survival")
+  class(fit) <- c("orthoDr", "fit", "surv")
 
   return(fit)
 }

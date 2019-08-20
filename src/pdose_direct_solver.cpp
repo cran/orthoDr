@@ -22,76 +22,163 @@
 
 #include <RcppArmadillo.h>
 #include "utilities.h"
-#include "orthoDr_surv.h"
+#include "orthoDr_pdose.h"
+
 
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-double surv_forward_f(const arma::mat& B,
-                const arma::mat& X,
-                const arma::vec& Fail_Ind,
-                double bw,
-                int ncore)
+double pdose_direct_f(const arma::mat& B,
+                   const arma::mat& X,
+                   const arma::colvec& A,
+                   const arma::colvec& a_seq,
+                   const arma::colvec& R,
+                   const double bw,
+                   const arma::colvec& W,
+                   int ncore)
 {
-  // This function computes the estimation equations and its 2-norm for the survival dimensional reduction model
-  // It only implement the dN method, with phi(t)
-
   int N = X.n_rows;
-  int P = X.n_cols;
-  int nFail = Fail_Ind.size();
   int ndr = B.n_cols;
 
   arma::mat BX = X * B;
+  arma::mat kernel_matrix_X;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
 
-  arma::mat kernel_matrix;
-
   if (ncore > 1)
-    kernel_matrix = KernelDist_multi(BX, ncore, 1);
+    kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
   else
-    kernel_matrix = KernelDist_single(BX, 1);
+    kernel_matrix_X =  KernelDist_single(BX, 1);
 
-  arma::rowvec EE(P, arma::fill::zeros);
 
-  for(int j=0; j<nFail; j++)
+  arma::colvec Dose;
+  Dose = kernel_matrix_X.t() * W;
+  arma::mat D_dist(N,N);
+
+  double Dose_scale = stddev(a_seq)*bw;
+  double A_scale = stddev(A)*bw;
+
+  Dose /= Dose_scale;
+  arma::colvec A_vec = A;
+  A_vec /= A_scale;
+
+  for (int i = 0; i < N; i++)
   {
-    int fail_j_ind = Fail_Ind[j]-1;
-
-    arma::rowvec TheCond(P);
-    TheCond.fill(0);
-    double weights = 0;
-
-    for(int k=fail_j_ind; k<N; k++)
+    for (int j = 0; j < N; j ++)
     {
-      TheCond += X.row(k) * kernel_matrix(k, fail_j_ind);
-      weights += kernel_matrix(k, fail_j_ind);
+      D_dist(j,i) = exp(-(pow(A_vec(j)-Dose(i),2)));
     }
-
-    EE += X.row(fail_j_ind) - TheCond/weights;
-
-    //Rcout << "this slice is " << EEALL.slice(j) << std::endl;
   }
 
-  // arma::mat EE = sum(EEALL, 2);
+  arma::colvec Hat_R(N);
+  arma::colvec X_A(N);
 
-  return accu(pow(EE, 2))/nFail/nFail;
+  for (int i = 0; i < N; i++){
+    X_A =  kernel_matrix_X.col(i) % D_dist.col(i);
+    Hat_R(i) = sum(R % X_A)/sum(X_A);
+  }
+
+  return -mean(Hat_R);
+
 }
 
-void surv_forward_g(arma::mat& B,
-            double F0,
-            arma::mat& G,
-            const arma::mat& X,
-            const arma::vec& Fail_Ind,
-            double bw,
-            double epsilon,
-            int ncore)
+void pdose_direct_w(const arma::mat& B,
+                 const arma::mat& X,
+                 const arma::colvec& A,
+                 const arma::colvec& a_seq,
+                 const arma::mat& a_dist,
+                 const arma::colvec& R,
+                 const double bw,
+                 arma::colvec& W,
+                 const arma::colvec& lambda,
+                 int ncore)
+
 {
-  // This function computes the gradiant of the estimation equations
+  int N = X.n_rows;
+  int ndr = B.n_cols;
+  int K = a_dist.n_cols;
+
+  // BX and kernel matrix
+
+  arma::mat BX = X * B;
+  arma::mat kernel_matrix_X;
+
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+
+  for (int j=0; j<ndr; j++)
+    BX.col(j) /= BX_scale(j);
+
+  if (ncore > 1)
+    kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
+  else
+    kernel_matrix_X =  KernelDist_single(BX, 1);
+
+
+  arma::mat Hat_R(N, N);
+  arma::vec X_a(N);
+
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < K; j++) {
+      X_a =  kernel_matrix_X.col(i) % a_dist.col(j);
+      Hat_R.at(i, j) = sum(R % X_a)/sum(X_a);
+    }
+  }
+
+  arma::colvec MAX_Hat_R = max(Hat_R, 1);
+
+  arma::ucolvec index = index_max(Hat_R,1);
+  arma::colvec Hat_Dose = a_seq(index);
+  arma::mat Ident(N,N);
+  Ident.eye();
+
+  // compute GCV
+
+  int Nlda = lambda.n_elem;
+  arma::mat dd(N,N);
+  arma::mat k1(N,1);
+  arma::mat k2(N,N);
+  double upper;
+  double lower;
+  arma::colvec GCV(Nlda);
+
+
+  for (int m = 0; m < Nlda; m++){
+
+    dd = kernel_matrix_X + lambda(m) * Ident;
+    k1 = (Ident - kernel_matrix_X.t() * inv(dd)) * Hat_Dose;
+    upper = norm(k1,"fro")*norm(k1,"fro");
+    k2 = (Ident -  kernel_matrix_X.t() * inv(dd));
+    lower = trace(k2);
+    GCV(m) = (N * upper) / (lower*lower);
+
+}
+
+  double indexGCV = std::min_element(GCV.begin(), GCV.end()) - GCV.begin();
+  double lambda0 = lambda(indexGCV);
+
+  dd = kernel_matrix_X + lambda0 * Ident;
+  W = inv(dd) * Hat_Dose;
+
+}
+
+
+void pdose_direct_g(arma::mat& B,
+                 const double F0,
+                 arma::mat& G,
+                 const arma::mat& X,
+                 const arma::colvec& A,
+                 const arma::colvec& a_seq,
+                 const arma::colvec& R,
+                 const double bw,
+                 const arma::colvec& W,
+                 const double lambda0,
+                 const double epsilon,
+                 int ncore)
+{
 
   int P = B.n_rows;
   int ndr = B.n_cols;
@@ -107,30 +194,33 @@ void surv_forward_g(arma::mat& B,
   for (int j = 0; j < ndr; j++)
     for (int i = 0; i < P; i++)
     {
-
       // small increment
       double temp = B(i, j);
       NewB(i, j) = B(i, j) + epsilon;
 
       // calculate gradiant
-      G(i,j) = (surv_forward_f(NewB, X, Fail_Ind, bw, 1) - F0) / epsilon;
+      G(i,j) = (pdose_direct_f(NewB, X, A, a_seq, R, bw, W, ncore) - F0) / epsilon;
 
-      NewB(i, j) = temp;
+      // reset
+      NewB(i,j) = temp;
     }
 }
 
 return;
 }
 
-//' @title surv_forward_solver \code{C++} function
-//' @name surv_forward_solver
-//' @description The main optimization function for survival dimensional reduction, the forward method. This is an internal function and should not be called directly.
+//' @title pdose_direct_solver
+//' @name pdose_direct_solver
+//' @description The direct learning optimization function for personalized dose finding.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-//' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
-//' @param Phit Phit as defined in Sun et al. (2017)
-//' @param Fail_Ind The locations of the failure subjects
-//' @param bw Kernel bandwidth for X
+//' @param X The covariate matrix
+//' @param A observed dose levels
+//' @param a_dist A kernel distance matrix for the observed dose and girds of the dose levels
+//' @param a_seq A grid of dose levels
+//' @param R The perosnalzied medicine reward
+//' @param lambda The penalty for the GCV for the kernel ridge regression
+//' @param bw A Kernel bandwidth, assuming each variable have unit variance
 //' @param rho (don't change) Parameter for control the linear approximation in line search
 //' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
 //' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
@@ -141,37 +231,35 @@ return;
 //' @param gtol (don't change) Gradient tolerance level
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
-//' @param ncore The number of cores for parallel computing
 //' @return The optimizer \code{B} for the esitmating equation.
-//' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
+//' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
 //' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
-//' @examples
-//' # This function should be called internally. When having all objects pre-computed, one can call
-//' # surv_solver(B, X, Phit, Fail.Ind,
-//' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
-//' # to solve for the parameters B.
-//'
 // [[Rcpp::export]]
 
-List surv_forward_solver(arma::mat B,
-                 const arma::mat& X,
-                 const arma::vec& Fail_Ind,
-                 double bw,
-                 double rho,
-                 double eta,
-                 double gamma,
-                 double tau,
-                 double epsilon,
-                 double btol,
-                 double ftol,
-                 double gtol,
-                 int maxitr,
-                 int verbose,
-                 int ncore)
+List pdose_direct_solver(arma::mat B,
+                      const arma::mat X,
+                      const arma::colvec A,
+                      const arma::mat a_dist,
+                      const arma::colvec a_seq,
+                      const arma::colvec R,
+                      const arma::colvec lambda,
+                      double bw,
+                      double rho,
+                      double eta,
+                      double gamma,
+                      double tau,
+                      double epsilon,
+                      double btol,
+                      double ftol,
+                      double gtol,
+                      int maxitr,
+                      int verbose,
+                      int ncore)
 {
-
   int P = B.n_rows;
   int ndr = B.n_cols;
+  int N = X.n_rows;
+  // int K = a_dist.n_cols;
 
   arma::mat crit(maxitr,3);
   bool invH = true;
@@ -194,11 +282,30 @@ List surv_forward_solver(arma::mat B,
 
   // Initial function value and gradient, prepare for iterations
 
-  double F = surv_forward_f(B, X, Fail_Ind, bw, ncore);
+  // Initiate W
+  arma::mat BX = X * B;
+  arma::mat kernel_matrix_X;
 
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+
+  for (int j=0; j<ndr; j++)
+    BX.col(j) /= BX_scale(j);
+
+  if (ncore > 1)
+    kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
+  else
+    kernel_matrix_X =  KernelDist_single(BX, 1);
+
+  arma::colvec W(N);
+  W.fill(0);
+  double lambda0 = 0.1;
+
+  pdose_direct_w(B, X, A, a_seq,a_dist,R, bw, W,lambda, ncore);
+
+  double F = pdose_direct_f(B, X, A, a_seq, R, bw, W,ncore);
   arma::mat G(P, ndr);
   G.fill(0);
-  surv_forward_g(B, F, G, X, Fail_Ind, bw, epsilon, ncore);
+  pdose_direct_g(B, F, G, X, A, a_seq, R, bw, W, lambda0, epsilon, ncore);
 
   //return G;
 
@@ -243,7 +350,9 @@ List surv_forward_solver(arma::mat B,
   double SY;
 
   if (verbose > 1)
+  {
     Rcout << "Initial value,   F = " << F << std::endl;
+  }
 
   for(itr = 1; itr < maxitr + 1; itr++){
     BP = B;
@@ -251,6 +360,7 @@ List surv_forward_solver(arma::mat B,
     GP = G;
     dtXP = dtX;
 
+    // Update W
     int nls = 1;
     double deriv = rho * nrmG * nrmG;
 
@@ -263,8 +373,11 @@ List surv_forward_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
-      F = surv_forward_f(B, X, Fail_Ind, bw, ncore);
-      surv_forward_g(B, F, G, X, Fail_Ind, bw, epsilon, ncore);
+      pdose_direct_w(B, X, A,a_seq,a_dist,R, bw, W, lambda, ncore);
+
+      F = pdose_direct_f( B, X, A, a_seq, R, bw, W, ncore);
+
+      pdose_direct_g(B, F, G,  X, A, a_seq, R,bw,W,lambda0, epsilon, ncore);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
@@ -308,7 +421,10 @@ List surv_forward_solver(arma::mat B,
     crit(itr-1,2) = FDiff;
 
     if (verbose > 1 && (itr % 10 == 0) )
+    {
       Rcout << "At iteration " << itr << ", F = " << F << std::endl;
+      Rcout << "B is " << B << std::endl;
+    }
 
     if (itr >= 5) // so I will run at least 5 iterations before checking for convergence
     {
@@ -341,16 +457,18 @@ List surv_forward_solver(arma::mat B,
 
   if (verbose > 0){
     Rcout << "number of iterations: " << itr << std::endl;
-    Rcout << "functional value: " << std::setprecision(6) << F << std::endl;
+    Rcout << "functional value: " << F << std::endl;
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
   }
 
   List ret;
   ret["B"] = B;
+  ret["W"] = W;
   ret["fn"] = F;
   ret["itr"] = itr;
   ret["converge"] = (itr<maxitr);
   return (ret);
 }
+
 

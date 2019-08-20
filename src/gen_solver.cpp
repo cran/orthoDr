@@ -1,4 +1,28 @@
+//    ----------------------------------------------------------------
+//
+//    Orthogonality Constrained Optimization for Dimension Reduction
+//    (orthoDr)
+//
+//    This program is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU General Public License
+//    as published by the Free Software Foundation; either version 3
+//    of the License, or (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public
+//    License along with this program; if not, write to the Free
+//    Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+//    Boston, MA  02110-1301, USA.
+//
+//    ----------------------------------------------------------------
+
 #include <RcppArmadillo.h>
+#include "utilities.h"
+#include "orthoDr_gen.h"
 
 using namespace Rcpp;
 
@@ -53,9 +77,6 @@ void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g
 
   return;
 }
-
-double dmax(double a, double b);
-double dmin(double a, double b);
 
 
 //' @title General solver \code{C++} function
@@ -118,6 +139,8 @@ List gen_solver(arma::mat B,
   // Initial function value and gradient, prepare for iterations
 
   double F = gen_f(B, f, env);
+  arma::vec F_seq(maxitr);
+  F_seq.fill(0.0);
 
   arma::mat G(P, ndr);
   G.fill(0);
@@ -171,6 +194,7 @@ List gen_solver(arma::mat B,
     Rcout << "Initial value,   F = " << F << std::endl;
 
   for(itr = 1; itr < maxitr + 1; itr++){
+
     BP = B;
     FP = F;
     GP = G;
@@ -203,6 +227,7 @@ List gen_solver(arma::mat B,
       nls = nls + 1;
     }
 
+    F_seq[itr-1] = F;
     GX = G.t() * B;
 
     if(invH){
@@ -279,6 +304,7 @@ List gen_solver(arma::mat B,
   List ret;
   ret["B"] = B;
   ret["fn"] = F;
+  ret["fn_Seq"] = F_seq;
   ret["itr"] = itr;
   ret["converge"] = (itr<maxitr);
   return (ret);

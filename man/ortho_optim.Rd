@@ -4,8 +4,8 @@
 \alias{ortho_optim}
 \title{Orthogonality constrained optimization}
 \usage{
-ortho_optim(B, fn, grad = NULL, ..., maximize = FALSE, control = list(),
-  maxitr = 500, verbose = FALSE)
+ortho_optim(B, fn, grad = NULL, ..., maximize = FALSE,
+  control = list(), maxitr = 500, verbose = FALSE)
 }
 \arguments{
 \item{B}{Initial \code{B} values. Must be a matrix, and the columns are subject to the orthogonality constrains. Will be processed by Gram-Schmidt if not orthogonal}

@@ -1,5 +1,28 @@
+//    ----------------------------------------------------------------
+//
+//    Orthogonality Constrained Optimization for Dimension Reduction
+//    (orthoDr)
+//
+//    This program is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU General Public License
+//    as published by the Free Software Foundation; either version 3
+//    of the License, or (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public
+//    License along with this program; if not, write to the Free
+//    Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+//    Boston, MA  02110-1301, USA.
+//
+//    ----------------------------------------------------------------
+
 #include <RcppArmadillo.h>
 #include "utilities.h"
+#include "orthoDr_reg.h"
 
 using namespace Rcpp;
 
@@ -44,6 +67,9 @@ double local_f(const arma::mat& B,
     Ex.row(i) /= Kx(i);
   }
 
+
+
+  /*
   // get half power of kernel weights
   kernel_matrix_x = sqrt(kernel_matrix_x);
 
@@ -77,6 +103,25 @@ double local_f(const arma::mat& B,
 
   for(int i=0; i<N; i++){
     Seff_sum += (X.row(i)-Ex.row(i)).t()*(Y.row(i) - a(i))*b.row(i);
+  }
+  */
+
+  arma::mat Ones(N, 1);
+  Ones.fill(1.0);
+
+  arma::mat beta_hat = arma::solve(arma::join_rows(Ones, BX), Y);
+
+  double a = beta_hat(0, 0);
+  arma::mat b(1, ndr);
+
+  for(int k=0; k<ndr; k++)
+    b(0, k) = beta_hat(k+1, 0);
+
+  double ret = 0;
+  arma::mat Seff_sum(P, ndr, arma::fill::zeros);
+
+  for(int i=0; i<N; i++){
+    Seff_sum += (X.row(i)-Ex.row(i)).t()*(Y.row(i) - a)*b;
   }
 
   ret = accu(pow(Seff_sum, 2)/N/N);

@@ -7,6 +7,8 @@
 predict_orthoDr_reg(object, testx, ...)
 }
 \arguments{
+\item{object}{fitted object}
+
 \item{testx}{Testing data}
 
 \item{...}{...}

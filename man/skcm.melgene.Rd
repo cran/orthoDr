@@ -14,7 +14,7 @@ The expression of top 20 genes of cutaneous melanoma literature based on the Mel
 \references{
 Chatzinasiou, Foteini, Christina M. Lill, Katerina Kypreou, Irene Stefanaki, Vasiliki Nicolaou, George Spyrou, Evangelos Evangelou et al. "Comprehensive field synopsis and systematic meta-analyses of genetic association studies in cutaneous melanoma." Journal of the National Cancer Institute 103, no. 16 (2011): 1227-1235.
 
-\url{http://bioserver-3.bioacademy.gr/Bioserver/MelGene/}
+\url{http://bioinformatics.cing.ac.cy/MelGene/}
 
 \url{https://cancergenome.nih.gov/}
 }

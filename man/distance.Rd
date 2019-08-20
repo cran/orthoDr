@@ -11,7 +11,7 @@ distance(s1, s2, type = "dist", x = NULL)
 
 \item{s2}{second space}
 
-\item{type}{type of distance measures: "dist" (default), "trace" or "canonical"}
+\item{type}{type of distance measures: "dist" (default), "trace", "canonical" or "sine"}
 
 \item{x}{the covariate values, for canonical correlation only}
 }

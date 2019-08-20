@@ -4,8 +4,8 @@
 \alias{surv_dn_solver}
 \title{surv_dn_solver \code{C++} function}
 \usage{
-surv_dn_solver(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol,
-  ftol, gtol, maxitr, verbose, ncore)
+surv_dn_solver(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon,
+  btol, ftol, gtol, maxitr, verbose, ncore)
 }
 \arguments{
 \item{B}{A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint}

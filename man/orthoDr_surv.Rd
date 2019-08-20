@@ -4,8 +4,8 @@
 \alias{orthoDr_surv}
 \title{IR-CP model}
 \usage{
-orthoDr_surv(x, y, censor, method = "dm", ndr = ifelse(method == "forward",
-  1, 2), B.initial = NULL, bw = NULL, keep.data = FALSE,
+orthoDr_surv(x, y, censor, method = "dm", ndr = ifelse(method ==
+  "forward", 1, 2), B.initial = NULL, bw = NULL, keep.data = FALSE,
   control = list(), maxitr = 500, verbose = FALSE, ncore = 0)
 }
 \arguments{

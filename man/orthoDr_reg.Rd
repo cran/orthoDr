@@ -4,9 +4,9 @@
 \alias{orthoDr_reg}
 \title{orthoDr_reg}
 \usage{
-orthoDr_reg(x, y, method = "sir", ndr = 2, B.initial = NULL, bw = NULL,
-  keep.data = FALSE, control = list(), maxitr = 500, verbose = FALSE,
-  ncore = 0)
+orthoDr_reg(x, y, method = "sir", ndr = 2, B.initial = NULL,
+  bw = NULL, keep.data = FALSE, control = list(), maxitr = 500,
+  verbose = FALSE, ncore = 0)
 }
 \arguments{
 \item{x}{A matrix or data.frame for features (continous only). The algorithm will not scale the columns to unit variance}

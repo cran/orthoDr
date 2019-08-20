@@ -4,8 +4,8 @@
 \alias{gen_solver}
 \title{General solver \code{C++} function}
 \usage{
-gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol,
-  maxitr, verbose)
+gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol,
+  gtol, maxitr, verbose)
 }
 \arguments{
 \item{B}{A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint}

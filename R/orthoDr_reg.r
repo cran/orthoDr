@@ -47,8 +47,8 @@ orthoDr_reg <- function(x, y, method = "sir", ndr = 2,
 
   # check tuning parameters
   control = control.check(control)
-  # match.arg(method, c("sir", "save", "phd", "local", "seff"))
-  match.arg(method, c("sir", "phd"))
+  match.arg(method, c("sir", "save", "phd", "local", "seff"))
+  # match.arg(method, c("sir", "phd"))
 
   # this is temporary
   #if (method %in% c("save"))
@@ -99,7 +99,7 @@ orthoDr_reg <- function(x, y, method = "sir", ndr = 2,
     fit[['bw']] = bw
   }
 
-  class(fit) <- c("orthoDr", "fit", "regression")
+  class(fit) <- c("orthoDr", "fit", "reg")
 
   return(fit)
 }

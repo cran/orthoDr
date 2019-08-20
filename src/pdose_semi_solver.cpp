@@ -22,130 +22,102 @@
 
 #include <RcppArmadillo.h>
 #include "utilities.h"
-#include "orthoDr_surv.h"
+#include "orthoDr_pdose.h"
 
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-double surv_dm_f(const arma::mat& B,
-              const arma::mat& X,
-              const arma::mat& Phit,
-              const arma::vec& Fail_Ind,
-              double bw,
-              int ncore)
+double pdose_semi_f(const arma::mat& B,
+                      const arma::mat& X,
+                      const arma::colvec& R,
+                      const arma::colvec& A,
+                      const double bw,
+                      int ncore)
+
 {
   int N = X.n_rows;
-  int P = X.n_cols;
-  int nFail = Fail_Ind.size();
   int ndr = B.n_cols;
 
-  arma::mat BX = X * B;
+  arma::mat BX  = X * B;
+  BX.insert_cols(1, A);
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
 
-  for (int j=0; j<ndr; j++)
+  for (int j=0; j<ndr+1; j++)
     BX.col(j) /= BX_scale(j);
 
   arma::mat kernel_matrix;
 
   if (ncore > 1)
-    kernel_matrix = KernelDist_multi(BX, ncore, 1);
+    kernel_matrix=  KernelDist_multi(BX,ncore, 1);
   else
-    kernel_matrix = KernelDist_single(BX, 1);
+    kernel_matrix =  KernelDist_single(BX,1);
 
-  arma::mat TheIntegration(P, P, arma::fill::zeros);
-
-  for(int i=0; i<N; i++)
-  {
-    arma::rowvec weighted_sum(P, arma::fill::zeros);
-    double weights = 0;
-    double lambda_j; // the conditional hazard at time point j.
-    double delta;
-
-    int j = nFail-1;
-    int k = N-1;
-    int fail_j_ind;
-
-    // starting from the last time point
-    for (j = nFail-1; j >= 0; j --)
-    {
-      // the index
-      fail_j_ind = Fail_Ind[j]-1;
-
-      for ( ; k >= fail_j_ind; k--)
-      {
-        weighted_sum += X.row(k) * kernel_matrix(i, k);
-        weights += kernel_matrix(i, k);
-      }
-
-      // the conditional lambda for subject i at time point j
-      if (i >= fail_j_ind && weights > 0)
-      {
-        lambda_j = kernel_matrix(i, fail_j_ind)/weights;
-        delta = (fail_j_ind == i);
-
-        // adding the estimating equation
-
-        TheIntegration += (delta - lambda_j) * Phit.col(j) * (X.row(i) - weighted_sum/weights);
-      }
-    }
+  arma::vec kernel_mean(N);
+  for (int i = 0; i < N; i++) {
+    kernel_mean(i) = sum(R % kernel_matrix.col(i))/sum(kernel_matrix.col(i));
   }
 
-  return accu(pow(TheIntegration,2))/nFail/nFail;
+  double mse = sqrt(mean( (R-kernel_mean) % (R-kernel_mean)) );
+
+  return mse;
 }
 
-void surv_dm_g(arma::mat& B,
-            const double F0,
-            arma::mat& G,
-            const arma::mat& X,
-            const arma::mat& Phit,
-            const arma::vec& Fail_Ind,
-            double bw,
-            const double epsilon,
-            int ncore)
+
+
+void  pdose_semi_g( const arma::mat& B,
+                 const double F0,
+                 arma::mat& G,
+                 const arma::mat& X,
+                 const arma::colvec& R,
+                 const arma::colvec& A,
+                 const double bw,
+                 const double epsilon,
+                 int ncore)
 {
   // This function computes the gradiant of the estimation equations
 
   int P = B.n_rows;
   int ndr = B.n_cols;
 
-  #pragma omp parallel num_threads(ncore)
-  {
-    // create one copy of B for each thread
-    arma::mat NewB(P, ndr);
-    NewB = B;
+#pragma omp parallel num_threads(ncore)
+{
+  // create one copy of B for each thread
+  arma::mat NewB(P, ndr);
+  NewB = B;
 
-    // parallel loop
-    #pragma omp for collapse(2) schedule(static)
-    for (int j = 0; j < ndr; j++)
-    for (int i = 0; i < P; i++)
+#pragma omp for collapse(2) schedule(static)
+  for (int j = 0; j < ndr; j++)
+    for(int i = 0; i < P; i++)
     {
-
       // small increment
       double temp = B(i, j);
       NewB(i, j) = B(i, j) + epsilon;
 
       // calculate gradiant
-      G(i,j) = (surv_dm_f(NewB, X, Phit, Fail_Ind, bw, 1) - F0) / epsilon;
+      G(i,j) = (pdose_semi_f(NewB, X, R, A, bw, ncore) - F0) / epsilon;
 
-      NewB(i, j) = temp;
+      // reset
+      NewB(i,j) = temp;
     }
-  }
-
-  return;
 }
 
-//' @title surv_dm_solver \code{C++} function
-//' @name surv_dm_solver
-//' @description The main optimization function for survival dimensional reduction, the IR-Semi method. This is an internal function and should not be called directly.
+return;
+}
+
+//' @title pdose_semi_solver
+//' @name pdose_semi_solver
+//' @description The pseudo direct learning optimization function for personalized dose finding with dimension reduction.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-//' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
-//' @param Phit Phit as defined in Sun et al. (2017)
-//' @param Fail_Ind The locations of the failure subjects
-//' @param bw Kernel bandwidth for X
-//' @param bw_optim whether to optimize the bandwidth
+//' @param X The covariate matrix
+//' @param R The perosnalzied medicine reward
+//' @param A observed dose levels
+//' @param a_dist A kernel distance matrix for the observed dose and girds of the dose levels
+//' @param a_seq A grid of dose levels
+//' @param lambda The penalty for the GCV for the kernel ridge regression
+//' @param bw A Kernel bandwidth, assuming each variable have unit variance
 //' @param rho (don't change) Parameter for control the linear approximation in line search
 //' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
 //' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
@@ -156,34 +128,30 @@ void surv_dm_g(arma::mat& B,
 //' @param gtol (don't change) Gradient tolerance level
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
-//' @param ncore The number of cores for parallel computing
 //' @return The optimizer \code{B} for the esitmating equation.
-//' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
+//' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
 //' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
-//' @examples
-//' # This function should be called internally. When having all objects pre-computed, one can call
-//' # surv_solver(B, X, Phit, Fail.Ind,
-//' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
-//' # to solve for the parameters B.
-//'
 // [[Rcpp::export]]
 
-List surv_dm_solver(arma::mat B,
-                 const arma::mat& X,
-                 const arma::mat& Phit,
-                 const arma::vec& Fail_Ind,
-                 double bw,
-                 double rho,
-                 double eta,
-                 double gamma,
-                 double tau,
-                 double epsilon,
-                 double btol,
-                 double ftol,
-                 double gtol,
-                 int maxitr,
-                 int verbose,
-                 int ncore)
+List pdose_semi_solver(arma::mat& B,
+                  const arma::mat& X,
+                  const arma::colvec& R,
+                  const arma::colvec& A,
+                  const arma::mat a_dist,
+                  const arma::colvec a_seq,
+                  const arma::colvec lambda,
+                  const double bw,
+                  double rho,
+                  double eta,
+                  double gamma,
+                  double tau,
+                  double epsilon,
+                  double btol,
+                  double ftol,
+                  double gtol,
+                  int maxitr,
+                  int verbose,
+                  int ncore)
 {
 
   int P = B.n_rows;
@@ -198,17 +166,23 @@ List surv_dm_solver(arma::mat B,
     eye2P.eye();
   }
 
-  // initialize parallel computing
+  if (ncore > 1) OMPMSG(1);
+  int haveCore = omp_get_max_threads();
+  if (ncore <= 0) ncore = haveCore;
 
-  checkCores(ncore, verbose);
+  if (ncore > haveCore)
+  {
+    if (verbose) Rcout << "Do not have " <<  ncore << " cores, use maximum " << haveCore << " cores." << std::endl;
+    ncore = haveCore;
+  }
 
   // Initial function value and gradient, prepare for iterations
 
-  double F = surv_dm_f(B, X, Phit, Fail_Ind, bw, ncore);
+  double F = pdose_semi_f(B, X, R, A, bw, ncore);
 
   arma::mat G(P, ndr);
   G.fill(0);
-  surv_dm_g(B, F, G, X, Phit, Fail_Ind, bw, epsilon, ncore);
+  pdose_semi_g(B, F, G, X, R, A, bw, epsilon, ncore);
 
   //return G;
 
@@ -239,7 +213,7 @@ List surv_dm_solver(arma::mat B,
   double Cval = F;
 
   // main iteration
-  int itr;
+  int itr = 0;
   arma::mat BP;
   double FP;
   arma::mat GP;
@@ -253,7 +227,6 @@ List surv_dm_solver(arma::mat B,
   double SY;
 
   if (verbose > 1)
-    Rcout << "Initial value,   F = " << F << std::endl;
 
   for(itr = 1; itr < maxitr + 1; itr++){
     BP = B;
@@ -273,8 +246,8 @@ List surv_dm_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
-      F = surv_dm_f(B, X, Phit, Fail_Ind, bw, ncore);
-      surv_dm_g(B, F, G, X, Phit, Fail_Ind, bw, epsilon, ncore);
+      F = pdose_semi_f(B, X, R, A, bw, ncore);
+      pdose_semi_g(B, F, G, X, R, A, bw, epsilon, ncore);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
@@ -338,9 +311,13 @@ List surv_dm_solver(arma::mat B,
     double Qp = Q;
     Q = gamma * Qp + 1;
     Cval = (gamma*Qp*Cval + F)/Q;
+
   }
 
-	if(itr>=maxitr){
+  //Rcout << "iteration " << itr << std::endl;
+ // Rcout << "maxitr " << maxitr << std::endl;
+
+	if(itr> maxitr){
 		Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
@@ -355,11 +332,76 @@ List surv_dm_solver(arma::mat B,
     Rcout << "norm of feasibility: " << feasi << std::endl;
   }
 
+  int N = X.n_rows;
+  int K = a_dist.n_cols;
+
+  // BX and kernel matrix
+
+  arma::mat BX = X * B;
+  arma::mat kernel_matrix_X;
+
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+
+  for (int j=0; j<ndr; j++)
+    BX.col(j) /= BX_scale(j);
+
+  if (ncore > 1)
+    kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
+  else
+    kernel_matrix_X =  KernelDist_single(BX, 1);
+
+
+  arma::mat Hat_R(N, N);
+  arma::vec X_a(N);
+
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < K; j++) {
+      X_a =  kernel_matrix_X.col(i) % a_dist.col(j);
+      Hat_R.at(i, j) = sum(R % X_a)/sum(X_a);
+    }
+  }
+
+  arma::colvec MAX_Hat_R = max(Hat_R, 1);
+
+  arma::ucolvec index = index_max(Hat_R,1);
+  arma::colvec Hat_Dose = a_seq(index);
+  arma::mat Ident(N,N);
+  Ident.eye();
+
+  // compute GCV
+
+  int Nlda = lambda.n_elem;
+  arma::mat dd(N,N);
+  arma::mat k1(N,1);
+  arma::mat k2(N,N);
+  double upper;
+  double lower;
+  arma::colvec GCV(Nlda);
+
+
+  for (int m = 0; m < Nlda; m++){
+
+    dd = kernel_matrix_X + lambda(m) * Ident;
+    k1 = (Ident - kernel_matrix_X.t() * inv(dd)) * Hat_Dose;
+    upper = norm(k1,"fro")*norm(k1,"fro");
+    k2 = (Ident -  kernel_matrix_X.t() * inv(dd));
+    lower = trace(k2);
+    GCV(m) = (N * upper) / (lower*lower);
+
+  }
+
+  double indexGCV = std::min_element(GCV.begin(), GCV.end()) - GCV.begin();
+  double lambda0 = lambda(indexGCV);
+
+  dd = kernel_matrix_X + lambda0 * Ident;
+  arma::colvec W(N);
+  W = inv(dd) * Hat_Dose;
+
   List ret;
   ret["B"] = B;
+  ret["W"] = W;
   ret["fn"] = F;
   ret["itr"] = itr;
   ret["converge"] = (itr<maxitr);
-  ret["bw"] = bw;
   return (ret);
 }

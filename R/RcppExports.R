@@ -30,6 +30,78 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
     .Call(`_orthoDr_gen_solver`, B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 }
 
+#' @title pdose_direct_solver
+#' @name pdose_direct_solver
+#' @description The direct learning optimization function for personalized dose finding.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X The covariate matrix
+#' @param A observed dose levels
+#' @param a_dist A kernel distance matrix for the observed dose and girds of the dose levels
+#' @param a_seq A grid of dose levels
+#' @param R The perosnalzied medicine reward
+#' @param lambda The penalty for the GCV for the kernel ridge regression
+#' @param bw A Kernel bandwidth, assuming each variable have unit variance
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for approximating numerical gradient
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Estimation equation 2-norm tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @return The optimizer \code{B} for the esitmating equation.
+#' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title The prediction function for the personalized direct learning dose model
+#' @name dosepred
+#' @description Predict the fitted dose from the direct learning dose model
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X The covariate matrix
+#' @param X_test The test covariate matrix
+#' @param bw A Kernel bandwidth, assuming each variable have unit variance
+#' @param w The kernel ridge regression coefficient
+#' @return The predicted dose
+dosepred <- function(B, X, X_test, bw, W) {
+    .Call(`_orthoDr_dosepred`, B, X, X_test, bw, W)
+}
+
+#' @title pdose_semi_solver
+#' @name pdose_semi_solver
+#' @description The pseudo direct learning optimization function for personalized dose finding with dimension reduction.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X The covariate matrix
+#' @param R The perosnalzied medicine reward
+#' @param A observed dose levels
+#' @param a_dist A kernel distance matrix for the observed dose and girds of the dose levels
+#' @param a_seq A grid of dose levels
+#' @param lambda The penalty for the GCV for the kernel ridge regression
+#' @param bw A Kernel bandwidth, assuming each variable have unit variance
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for approximating numerical gradient
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Estimation equation 2-norm tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @return The optimizer \code{B} for the esitmating equation.
+#' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+pdose_semi_solver <- function(B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_pdose_semi_solver`, B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
 #' @title local_f
 #' @name local_f
 #' @description local method f value function
