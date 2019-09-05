@@ -13,13 +13,14 @@ citEntry(entry="Article",
                              person(family="Zhou", given="Wenzhuo"),
                              person(family="Zhang", given="Xin")),
 	       journal = "The R Journal",
-         year         = "2019",
-         url          = "https://arxiv.org/abs/1811.11733",
+         year        = "2019",
+         url         = "https://journal.r-project.org/archive/2019/RJ-2019-006/index.html",
+         pdf         = "https://arxiv.org/pdf/1811.11733.pdf",
 
          textVersion =
          paste("Zhu, R., Zhang, J., Zhao, R., Xu, P., Zhou, W., & Zhang, X. (2019). ",
                "orthoDr: semiparametric dimension reduction via orthogonality constrained optimization. ",
-               "The R Journal (Accepted)",
+               "The R Journal",
                sep=""))
 
 citEntry(entry="Article",
