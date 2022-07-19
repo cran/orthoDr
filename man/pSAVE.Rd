@@ -7,24 +7,28 @@
 pSAVE(x, a, r, ndr = 2, nslices0 = 2)
 }
 \arguments{
-\item{x}{A matrix for features (continuous only).}
+\item{x}{A \code{matrix} for features (continuous only).}
 
-\item{a}{A vector of observed dose levels (continuous only).}
+\item{a}{A \code{vector} of observed dose levels (continuous only).}
 
-\item{r}{A vector of reward (outcome).}
+\item{r}{A \code{vector} of reward (outcome).}
 
 \item{ndr}{The dimension structure}
 
 \item{nslices0}{Number of slides used for save}
 }
 \value{
-A list consisting of
+A \code{list} consisting of:
+
 \item{vectors}{The basis of central subspace, ordered by eigenvalues}
 }
 \description{
-The partial-SAVE model. This model is correct only under very strong assumptions, the solution is used as the initial value in the orthoDr optimization.
+The partial-SAVE model. This model is correct only under very strong
+assumptions, the solution is used as the initial value in the \code{orthoDr}
+optimization.
 }
 \references{
-Feng, Z., Wen, M.X, Yu, Z. and Zhu L. "On Partial Sufficient Dimension Reduction With Applications to Partially Linear Multi-Index Models" (2013)
-\url{https://arxiv.org/abs/1704.05046} .
+Feng, Z., Wen, X. M., Yu, Z., & Zhu, L. (2013). On partial sufficient dimension reduction with applications to partially linear multi-index models.
+Journal of the American Statistical Association, 108(501), 237-246.
+DOI: \doi{10.1080/01621459.2012.746065}
 }
