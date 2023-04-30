@@ -30,8 +30,7 @@ orthoDr_pdose(
 
 \item{ndr}{A dimension structure}
 
-\item{B.initial}{Initial \code{B} values. Will use the counting process based
-SIR model \link[=CP_SIR]{CP_SIR} as the initial if
+\item{B.initial}{Initial \code{B} values. Will use the partial SAVE \link[=pSAVE]{pSAVE} as the initial if
 leaving as \code{NULL}. If specified, must be a matrix with
 \code{ncol(x)} rows and \code{ndr} columns. Will be processed by
 Gram-Schmidt if not orthogonal.}
@@ -42,11 +41,11 @@ Gram-Schmidt if not orthogonal.}
 
 \item{K}{A number of grids in the range of dose}
 
-\item{method}{A method the user will implement}
+\item{method}{Either \code{"direct"} or \code{"pseudo_direct"}}
 
 \item{keep.data}{Should the original data be kept for prediction}
 
-\item{control}{A list of tuning variables for optimization. \code{epsilon} is the size for numerically appriximating the gradient. For others, see Wen and Yin (2013).}
+\item{control}{A list of tuning variables for optimization. \code{epsilon} is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).}
 
 \item{maxitr}{Maximum number of iterations}
 

@@ -1,4 +1,4 @@
-d9327511f6c3bf640321ec67b10b22f0 *DESCRIPTION
+2a3171d54be9d3b74b069b2a4b711169 *DESCRIPTION
 a934caaf6d0059ae9211d9e5bf25caaf *NAMESPACE
 1a1580aa88de4b41f58a2d20735e5f52 *R/CP_SIR.r
 0a2b6fbd592853cdc6f6fd0eb480d2a9 *R/RcppExports.R
@@ -7,7 +7,7 @@ a934caaf6d0059ae9211d9e5bf25caaf *NAMESPACE
 1e821d95018b2186d3df7c07f6bbf960 *R/hMave.r
 30695a0c57339f56d5034f68f1aa29f6 *R/kernel_weight.r
 c383192f1eabdcbc5c600c093dbc333c *R/orthoDr-package.R
-2267e437b684c312a9723a34a3e17bbe *R/orthoDr_pdose.r
+f73b33fb8c47beec939dc59e62a51cd1 *R/orthoDr_pdose.r
 8837e864537c63d965432e987d5e64a5 *R/orthoDr_reg.r
 e4624a6c0aad0fa96fe78f10154ba723 *R/orthoDr_surv.r
 8b00f8ca4c8e1cc74e5e0f97a427d9b3 *R/ortho_optim.r
@@ -18,11 +18,11 @@ d308b6120a9ab9ecdaa2f075979c247f *R/predict.r
 36f0ee8e9e4e4bacbca849c33c8b4480 *R/silverman.r
 e99790932dbae5a1dec0e32745f7c813 *R/skcm.r
 c1485783948d1b9d4bbb080405df8eb6 *R/view_dr_surv.r
-6ef0fdf7d7eebd964bdc7648c1bbf21c *README.md
-afbe4209b3bb961ba3e41cbfe79ea507 *build/partial.rdb
+78d8a7217cba240791e4dfe21e3066bb *README.md
+f01682ffd9d5582c0d3b8a226f3c2b16 *build/partial.rdb
 4e6931113e9f07fbca9675f7409ff0f3 *data/skcm.clinical.RData
 752206d48185bb75efb1b7c7d7a6beeb *data/skcm.melgene.RData
-b01ab6c663b5844744c29d1175496e40 *inst/CITATION
+ed5a7b62c087bf9af2a52c1b8f90a1ed *inst/CITATION
 a1971261c7137a9dc6636ca1ef111d18 *inst/NEWS
 2e94eb2507f5404115343f7a8cc7908d *man/CP_SIR.Rd
 68079c21b4fe7eec57a4b60d1cfb9834 *man/KernelDist_cross.Rd
@@ -35,8 +35,8 @@ b8533ab076e185feed81e498dece04aa *man/hMave.Rd
 97ad246aa55d0f1259d3eda1f2501d29 *man/kernel_weight.Rd
 baf40e26b13c47a6ee71510899ba80cd *man/local_f.Rd
 1521a97b86702d903019d0b8cb5371dc *man/local_solver.Rd
-2775e7549f0a83f32bfb92d590ce8f29 *man/orthoDr-package.Rd
-df131eb0216b7a5a5075154812c6aa2d *man/orthoDr_pdose.Rd
+20e6749868c78bd7ffa4105e249d62b6 *man/orthoDr-package.Rd
+d7319fd51507b9e9709e858d224a2076 *man/orthoDr_pdose.Rd
 20b90cda6bee13613213110997ad54ae *man/orthoDr_reg.Rd
 f626567dacab1942886bc461b073a080 *man/orthoDr_surv.Rd
 d5d7ecd057cc2384d5b32ad3276b9314 *man/ortho_optim.Rd
@@ -62,8 +62,8 @@ a5c8731ad220ff4e74aa5f84aad05de5 *man/skcm.clinical.Rd
 1223fbf79a911c113397d3eba121a7f3 *man/surv_dn_solver.Rd
 e724754d987833b393fb5f049cc4666c *man/surv_forward_solver.Rd
 66e219f6ccecbc0f69dc6f50d34c7972 *man/view_dr_surv.Rd
-e4a9a47c4a3aca98677ab8b16336e5de *src/Makevars
-e4a9a47c4a3aca98677ab8b16336e5de *src/Makevars.win
+573385ec51044fd7dd7d71a19a365244 *src/Makevars
+573385ec51044fd7dd7d71a19a365244 *src/Makevars.win
 e13add475303b2cf50cd8535f9450fbb *src/RcppExports.cpp
 b58a0598e2fdde26cc1dd5e2080ac8fb *src/gen_solver.cpp
 15ace39e5bc98c432670126837be06aa *src/orthoDr.h
