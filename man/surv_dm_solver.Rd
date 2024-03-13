@@ -55,8 +55,6 @@ surv_dm_solver(
 \item{verbose}{Should information be displayed}
 
 \item{ncore}{The number of cores for parallel computing}
-
-\item{bw_optim}{whether to optimize the bandwidth}
 }
 \value{
 The optimizer \code{B} for the estimating equation.

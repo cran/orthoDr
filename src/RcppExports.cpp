@@ -66,8 +66,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // dosepred
-arma::vec dosepred(arma::mat B, arma::mat X, arma::mat X_test, double bw, arma::colvec W);
-RcppExport SEXP _orthoDr_dosepred(SEXP BSEXP, SEXP XSEXP, SEXP X_testSEXP, SEXP bwSEXP, SEXP WSEXP) {
+arma::vec dosepred(arma::mat B, arma::mat X, arma::mat X_test, double bw, arma::colvec w);
+RcppExport SEXP _orthoDr_dosepred(SEXP BSEXP, SEXP XSEXP, SEXP X_testSEXP, SEXP bwSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -75,8 +75,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type X_test(X_testSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
-    Rcpp::traits::input_parameter< arma::colvec >::type W(WSEXP);
-    rcpp_result_gen = Rcpp::wrap(dosepred(B, X, X_test, bw, W));
+    Rcpp::traits::input_parameter< arma::colvec >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(dosepred(B, X, X_test, bw, w));
     return rcpp_result_gen;
 END_RCPP
 }

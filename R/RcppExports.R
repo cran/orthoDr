@@ -79,8 +79,8 @@ pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta,
 #' @param bw A Kernel bandwidth, assuming each variable have unit variance
 #' @param w The kernel ridge regression coefficient
 #' @return The predicted dose
-dosepred <- function(B, X, X_test, bw, W) {
-    .Call(`_orthoDr_dosepred`, B, X, X_test, bw, W)
+dosepred <- function(B, X, X_test, bw, w) {
+    .Call(`_orthoDr_dosepred`, B, X, X_test, bw, w)
 }
 
 #' @title pdose_semi_solver
@@ -299,7 +299,6 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
 #' @param Phit Phit as defined in Sun et al. (2017)
 #' @param Fail_Ind The locations of the failure subjects
 #' @param bw Kernel bandwidth for X
-#' @param bw_optim whether to optimize the bandwidth
 #' @param rho (don't change) Parameter for control the linear approximation in line search
 #' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
 #' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
@@ -369,7 +368,6 @@ surv_dn_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsil
 #' @keywords internal
 #' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 #' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
-#' @param Phit Phit as defined in Sun et al. (2017)
 #' @param Fail_Ind The locations of the failure subjects
 #' @param bw Kernel bandwidth for X
 #' @param rho (don't change) Parameter for control the linear approximation in line search
@@ -392,8 +390,8 @@ surv_dn_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsil
 #' 
 #' @examples
 #' # This function should be called internally. When having all objects pre-computed, one can call
-#' # surv_solver(B, X, Phit, Fail.Ind,
-#' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+#' # surv_forward_solver(B, X, Fail.Ind, bw,
+#' #                     rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 #' # to solve for the parameters B.
 #'
 surv_forward_solver <- function(B, X, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {

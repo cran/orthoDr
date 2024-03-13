@@ -52,8 +52,6 @@ surv_forward_solver(
 \item{verbose}{Should information be displayed}
 
 \item{ncore}{The number of cores for parallel computing}
-
-\item{Phit}{Phit as defined in Sun et al. (2017)}
 }
 \value{
 The optimizer \code{B} for the esitmating equation.
@@ -63,8 +61,8 @@ The main optimization function for survival dimensional reduction, the forward m
 }
 \examples{
 # This function should be called internally. When having all objects pre-computed, one can call
-# surv_solver(B, X, Phit, Fail.Ind,
-#             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+# surv_forward_solver(B, X, Fail.Ind, bw,
+#                     rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 # to solve for the parameters B.
 
 }

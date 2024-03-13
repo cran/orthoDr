@@ -24,6 +24,6 @@ The clinical variables of the SKCM dataset.
 The original data was obtained from The Cancer Genome Atlas (TCGA).
 }
 \references{
-\url{https://www.cancer.gov/about-nci/organization/ccg/research/structural-genomics/tcga}
+\url{https://www.cancer.gov/ccg/research/genome-sequencing/tcga}
 }
 \keyword{datasets}

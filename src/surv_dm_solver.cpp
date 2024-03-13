@@ -145,7 +145,6 @@ void surv_dm_g(arma::mat& B,
 //' @param Phit Phit as defined in Sun et al. (2017)
 //' @param Fail_Ind The locations of the failure subjects
 //' @param bw Kernel bandwidth for X
-//' @param bw_optim whether to optimize the bandwidth
 //' @param rho (don't change) Parameter for control the linear approximation in line search
 //' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
 //' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)

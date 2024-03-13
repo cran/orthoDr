@@ -4,7 +4,7 @@
 \alias{dosepred}
 \title{The prediction function for the personalized direct learning dose model}
 \usage{
-dosepred(B, X, X_test, bw, W)
+dosepred(B, X, X_test, bw, w)
 }
 \arguments{
 \item{B}{A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint}

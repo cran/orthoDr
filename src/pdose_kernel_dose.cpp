@@ -43,7 +43,7 @@ arma::vec dosepred(arma::mat B,
                    arma::mat X,
                    arma::mat X_test,
                    double bw,
-                   arma::colvec W)
+                   arma::colvec w)
 
 {
   int N = X.n_rows;
@@ -75,7 +75,7 @@ arma::vec dosepred(arma::mat B,
   }
 
   arma::colvec Dose;
-  Dose = kernel_matrix_X.t() * W;
+  Dose = kernel_matrix_X.t() * w;
 
   return Dose;
 

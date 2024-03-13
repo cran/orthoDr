@@ -128,7 +128,6 @@ return;
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
-//' @param Phit Phit as defined in Sun et al. (2017)
 //' @param Fail_Ind The locations of the failure subjects
 //' @param bw Kernel bandwidth for X
 //' @param rho (don't change) Parameter for control the linear approximation in line search
@@ -151,8 +150,8 @@ return;
 //' 
 //' @examples
 //' # This function should be called internally. When having all objects pre-computed, one can call
-//' # surv_solver(B, X, Phit, Fail.Ind,
-//' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+//' # surv_forward_solver(B, X, Fail.Ind, bw,
+//' #                     rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 //' # to solve for the parameters B.
 //'
 // [[Rcpp::export]]
